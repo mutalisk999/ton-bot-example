@@ -233,7 +233,7 @@ async def disconnect_wallet(message: types.Message):
     await message.answer('You have been successfully disconnected!')
 
 
-@dp.callback_query(lambda call: True)
+@dp.callback_query_handler(lambda call: True)
 async def main_callback_handler(call: CallbackQuery):
     await call.answer()
     message = call.message
