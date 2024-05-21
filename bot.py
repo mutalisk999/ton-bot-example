@@ -10,8 +10,8 @@ import qrcode
 # Aiogram imports
 from aiogram import Bot, Dispatcher, types  # type: ignore
 from aiogram.dispatcher.filters import Text  # type: ignore
-from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, \
-    CallbackQuery  # type: ignore
+from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup  # type: ignore
+from aiogram.types import CallbackQuery  # type: ignore
 from aiogram.types import InlineKeyboardButton  # type: ignore
 from aiogram.utils import executor  # type: ignore
 from pytonconnect import TonConnect
@@ -199,12 +199,7 @@ async def connect_wallet(message: types.Message, wallet_name: str):
     keyboard.add(button)
 
     img = qrcode.make(generated_url)
-    stream = BytesIO()
-    img.save(stream)
-
-    with open("qrcode", "wb") as file:
-        # Step 3: Write the data from the BytesIO object to the file
-        file.write(stream.getvalue())
+    img.save('qrcode')
 
     await message.answer_photo(photo=file, caption='Connect wallet within 3 minutes', reply_markup=keyboard)
 
