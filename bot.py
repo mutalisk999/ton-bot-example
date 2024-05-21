@@ -11,7 +11,8 @@ import qrcode
 # Aiogram imports
 from aiogram import Bot, Dispatcher, types  # type: ignore
 from aiogram.dispatcher.filters import Text  # type: ignore
-from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup  # type: ignore
+from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, \
+    InputFile  # type: ignore
 from aiogram.types import CallbackQuery  # type: ignore
 from aiogram.types import InlineKeyboardButton  # type: ignore
 from aiogram.utils import executor  # type: ignore
@@ -202,9 +203,9 @@ async def connect_wallet(message: types.Message, wallet_name: str):
     img = qrcode.make(generated_url)
     stream = BytesIO()
     img.save(stream)
-    encoded = base64.b64encode(stream.getvalue()).decode("ascii")
 
-    await message.answer_photo(photo=encoded, caption='Connect wallet within 3 minutes', reply_markup=keyboard)
+    file = InputFile(stream, filename='qrcode')
+    await message.answer_photo(photo=file, caption='Connect wallet within 3 minutes', reply_markup=keyboard)
 
     keyboard = InlineKeyboardMarkup()
     button = InlineKeyboardButton(text='Start', callback_data='wallet')
