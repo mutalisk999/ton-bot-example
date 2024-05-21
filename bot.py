@@ -135,9 +135,8 @@ async def deposit_handler(message: types.Message):
                          parse_mode=ParseMode.MARKDOWN)
 
 
-async def main() -> None:
-    await bot.delete_webhook(drop_pending_updates=True)  # skip_updates = True
-
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # Create Aiogram executor for our bot
     ex = executor.Executor(dp)
 
@@ -146,8 +145,3 @@ async def main() -> None:
 
     # Launch the bot
     ex.start_polling()
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    asyncio.run(main())
