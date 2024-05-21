@@ -1,19 +1,23 @@
 # Logging module
+import asyncio
 import logging
+import sys
 
 # Aiogram imports
 from aiogram import Bot, Dispatcher, types  # type: ignore
 from aiogram.dispatcher.filters import Text  # type: ignore
-from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton  # type: ignore
+from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup  # type: ignore
+from aiogram.types import InlineKeyboardButton  # type: ignore
 from aiogram.utils import executor  # type: ignore
+from pytonconnect import TonConnect
 
 # Local modules to work with Database and Ton network
 import config
 import ton
 import db
+from connector import get_connector
 
-# Now all the info about bot work will be printed out to console
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__file__)
 
 # Initialize the bot and dispatcher
 bot = Bot(token=config.BOT_TOKEN)
@@ -70,6 +74,28 @@ async def share_handler(message: types.Message):
                          parse_mode=ParseMode.MARKDOWN)
 
 
+@dp.message_handler(commands=['wallet'])
+async def wallet_handler(message: types.Message):
+    chat_id = message.chat.id
+    connector = get_connector(chat_id)
+    connected = await connector.restore_connection()
+
+    keyboard = InlineKeyboardMarkup(resize_keyboard=True)
+    if connected:
+        button1 = InlineKeyboardButton('Send Transaction', callback_data='send_tr')
+        button2 = InlineKeyboardButton('Disconnect', callback_data='disconnect')
+        keyboard.add(button1)
+        keyboard.add(button2)
+        await message.answer(text='You are already connected!', reply_markup=keyboard)
+
+    else:
+        wallets_list = TonConnect.get_wallets()
+        for wallet in wallets_list:
+            button1 = InlineKeyboardButton(text=wallet['name'], callback_data=f'connect:{wallet["name"]}')
+            keyboard.add(button1)
+        await message.answer(text='Choose wallet to connect', reply_markup=keyboard)
+
+
 @dp.message_handler(commands='balance')
 @dp.message_handler(Text(equals='balance', ignore_case=True))
 async def balance_handler(message: types.Message):
@@ -109,7 +135,9 @@ async def deposit_handler(message: types.Message):
                          parse_mode=ParseMode.MARKDOWN)
 
 
-if __name__ == '__main__':
+async def main() -> None:
+    await bot.delete_webhook(drop_pending_updates=True)  # skip_updates = True
+
     # Create Aiogram executor for our bot
     ex = executor.Executor(dp)
 
@@ -118,3 +146,8 @@ if __name__ == '__main__':
 
     # Launch the bot
     ex.start_polling()
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.run(main())

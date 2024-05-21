@@ -16,3 +16,5 @@ if RUN_IN_MAINNET:
 else:
     API_KEY = os.getenv("TESTNET_API_KEY")
     API_BASE_URL = 'https://testnet.toncenter.com'
+
+MANIFEST_URL='https://raw.githubusercontent.com/XaBbl4/pytonconnect/main/pytonconnect-manifest.json'

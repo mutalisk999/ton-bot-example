@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 python-dotenv = "==0.20.0"
 aiogram = "==2.21"
+pytoniq-core = "==0.1.10"
+pytonconnect = "==0.3.0"
+qrcode = "==7.4.2"
+redis = "==5.0.1"
 requests = "*"
 
 [dev-packages]
