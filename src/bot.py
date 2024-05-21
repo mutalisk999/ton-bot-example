@@ -5,14 +5,13 @@ import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.dispatcher.filters import Text
 from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, \
-                          InlineKeyboardMarkup, InlineKeyboardButton
+    InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils import executor
 
 # Local modules to work with Database and Ton network
 import config
 import ton
 import db
-
 
 # Now all the info about bot work will be printed out to console
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +45,29 @@ async def welcome_handler(message: types.Message):
                          'payments in TonCoin with Python.\n\n'
                          'Use keyboard to test my functionality.',
                          reply_markup=keyboard,
+                         protect_content=False,
+                         parse_mode=ParseMode.MARKDOWN)
+
+
+@dp.message_handler(commands=['share', 'help'])
+async def share_handler(message: types.Message):
+    # Function that sends the welcome message with main keyboard to user
+
+    uid = message.from_user.id  # Not neccessary, just to make code shorter
+
+    # If user doesn't exist in database, insert it
+    if not db.check_user(uid):
+        db.add_user(uid)
+
+    # Keyboard with two main buttons: Deposit and Balance
+    keyboard = InlineKeyboardMarkup(resize_keyboard=True)
+    button = InlineKeyboardButton('Select a group',
+                                  url=f'https://t.me/{config.BOT_NAME}?startgroup=frommenu')
+    keyboard.add(button)
+    await message.answer('Hi!\nI am example bot '
+                         'You can share me in other groups!\n',
+                         reply_markup=keyboard,
+                         protect_content=False,
                          parse_mode=ParseMode.MARKDOWN)
 
 
