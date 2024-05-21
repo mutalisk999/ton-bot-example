@@ -104,8 +104,10 @@ async def start_handler(message: types.Message):
     else:
         wallets_list = TonConnect.get_wallets()
         for wallet in wallets_list:
-            button1 = InlineKeyboardButton(text=wallet['name'], callback_data=f'connect:{wallet["name"]}')
-            keyboard.add(button1)
+            # only support official wallet
+            if wallet['name'] == "Wallet":
+                button1 = InlineKeyboardButton(text=wallet['name'], callback_data=f'connect:{wallet["name"]}')
+                keyboard.add(button1)
         await message.answer(text='Choose wallet to connect', reply_markup=keyboard)
 
 
@@ -200,9 +202,9 @@ async def connect_wallet(message: types.Message, wallet_name: str):
     button = InlineKeyboardButton('Connect', url=generated_url)
     keyboard.add(button)
 
-    img = qrcode.make(generated_url)
-    stream = BytesIO()
-    img.save(stream)
+    # img = qrcode.make(generated_url)
+    # stream = BytesIO()
+    # img.save(stream)
 
     await message.answer('Connect wallet within 3 minutes', reply_markup=keyboard)
 
