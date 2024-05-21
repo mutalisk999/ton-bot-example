@@ -10,7 +10,8 @@ import qrcode
 # Aiogram imports
 from aiogram import Bot, Dispatcher, types  # type: ignore
 from aiogram.dispatcher.filters import Text  # type: ignore
-from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup  # type: ignore
+from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, \
+    CallbackQuery  # type: ignore
 from aiogram.types import InlineKeyboardButton  # type: ignore
 from aiogram.utils import executor  # type: ignore
 from pytonconnect import TonConnect
@@ -31,10 +32,9 @@ bot = Bot(token=config.BOT_TOKEN)
 dp = Dispatcher(bot)
 
 
-@dp.message_handler(commands=['start', 'help'])
-@dp.message_handler(Text(equals='start', ignore_case=True))
+@dp.message_handler(commands=['help'])
 @dp.message_handler(Text(equals='help', ignore_case=True))
-async def welcome_handler(message: types.Message):
+async def help_handler(message: types.Message):
     # Function that sends the welcome message with main keyboard to user
 
     uid = message.from_user.id  # Not neccessary, just to make code shorter
@@ -84,9 +84,9 @@ async def share_handler(message: types.Message):
                          parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands='wallet')
-@dp.message_handler(Text(equals='wallet', ignore_case=True))
-async def wallet_handler(message: types.Message):
+@dp.message_handler(commands='start')
+@dp.message_handler(Text(equals='start', ignore_case=True))
+async def start_handler(message: types.Message):
     chat_id = message.chat.id
     connector = get_connector(chat_id)
     connected = await connector.restore_connection()
@@ -231,6 +231,31 @@ async def disconnect_wallet(message: types.Message):
     await connector.restore_connection()
     await connector.disconnect()
     await message.answer('You have been successfully disconnected!')
+
+
+@dp.callback_query(lambda call: True)
+async def main_callback_handler(call: CallbackQuery):
+    await call.answer()
+    message = call.message
+    data = call.data
+    if data == "help":
+        await help_handler(message)
+    elif data == "share":
+        await share_handler(message)
+    elif data == "balance":
+        await balance_handler(message)
+    elif data == "deposit":
+        await deposit_handler(message)
+    elif data == "start":
+        await start_handler(message)
+    elif data == "send_tr":
+        await send_transaction(message)
+    elif data == 'disconnect':
+        await disconnect_wallet(message)
+    else:
+        data = data.split(':')
+        if data[0] == 'connect':
+            await connect_wallet(message, data[1])
 
 
 if __name__ == '__main__':
