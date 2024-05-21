@@ -2,7 +2,11 @@
 import asyncio
 import logging
 import sys
+import time
+from io import BytesIO
 
+import pytonconnect
+import qrcode
 # Aiogram imports
 from aiogram import Bot, Dispatcher, types  # type: ignore
 from aiogram.dispatcher.filters import Text  # type: ignore
@@ -10,12 +14,15 @@ from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, Inline
 from aiogram.types import InlineKeyboardButton  # type: ignore
 from aiogram.utils import executor  # type: ignore
 from pytonconnect import TonConnect
+from pytonconnect.exceptions import UserRejectsError
+from pytoniq_core import Address
 
 # Local modules to work with Database and Ton network
 import config
 import ton
 import db
 from connector import get_connector
+from messages import get_comment_message
 
 logger = logging.getLogger(__file__)
 
@@ -25,6 +32,8 @@ dp = Dispatcher(bot)
 
 
 @dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(Text(equals='start', ignore_case=True))
+@dp.message_handler(Text(equals='help', ignore_case=True))
 async def welcome_handler(message: types.Message):
     # Function that sends the welcome message with main keyboard to user
 
@@ -52,7 +61,8 @@ async def welcome_handler(message: types.Message):
                          parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['share', 'help'])
+@dp.message_handler(commands='share')
+@dp.message_handler(Text(equals='share', ignore_case=True))
 async def share_handler(message: types.Message):
     # Function that sends the welcome message with main keyboard to user
 
@@ -74,7 +84,8 @@ async def share_handler(message: types.Message):
                          parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(commands=['wallet'])
+@dp.message_handler(commands='wallet')
+@dp.message_handler(Text(equals='wallet', ignore_case=True))
 async def wallet_handler(message: types.Message):
     chat_id = message.chat.id
     connector = get_connector(chat_id)
@@ -94,6 +105,39 @@ async def wallet_handler(message: types.Message):
             button1 = InlineKeyboardButton(text=wallet['name'], callback_data=f'connect:{wallet["name"]}')
             keyboard.add(button1)
         await message.answer(text='Choose wallet to connect', reply_markup=keyboard)
+
+
+@dp.message_handler(commands='transaction')
+@dp.message_handler(Text(equals='transaction', ignore_case=True))
+async def send_transaction(message: types.Message):
+    connector = get_connector(message.chat.id)
+    connected = await connector.restore_connection()
+    if not connected:
+        await message.answer('Connect wallet first!')
+        return
+
+    transaction = {
+        'valid_until': int(time.time() + 3600),
+        'messages': [
+            get_comment_message(
+                destination_address='0:0000000000000000000000000000000000000000000000000000000000000000',
+                amount=int(0.01 * 10 ** 9),
+                comment='hello world!'
+            )
+        ]
+    }
+
+    await message.answer(text='Approve transaction in your wallet app!')
+    try:
+        await asyncio.wait_for(connector.send_transaction(
+            transaction=transaction
+        ), 300)
+    except asyncio.TimeoutError:
+        await message.answer(text='Timeout error!')
+    except UserRejectsError:
+        await message.answer(text='You rejected the transaction!')
+    except Exception as e:
+        await message.answer(text=f'Unknown error: {e}')
 
 
 @dp.message_handler(commands='balance')
@@ -133,6 +177,60 @@ async def deposit_handler(message: types.Message):
                          'You can also deposit by clicking the button below.',
                          reply_markup=keyboard,
                          parse_mode=ParseMode.MARKDOWN)
+
+
+async def connect_wallet(message: types.Message, wallet_name: str):
+    connector = get_connector(message.chat.id)
+
+    wallets_list = connector.get_wallets()
+    wallet = None
+
+    for w in wallets_list:
+        if w['name'] == wallet_name:
+            wallet = w
+
+    if wallet is None:
+        raise Exception(f'Unknown wallet: {wallet_name}')
+
+    generated_url = await connector.connect(wallet)
+
+    keyboard = InlineKeyboardMarkup()
+    button = InlineKeyboardButton('Connect', url=generated_url)
+    keyboard.add(button)
+
+    img = qrcode.make(generated_url)
+    stream = BytesIO()
+    img.save(stream)
+
+    with open("qrcode", "wb") as file:
+        # Step 3: Write the data from the BytesIO object to the file
+        file.write(stream.getvalue())
+
+    await message.answer_photo(photo=file, caption='Connect wallet within 3 minutes', reply_markup=keyboard)
+
+    keyboard = InlineKeyboardMarkup()
+    button = InlineKeyboardButton(text='Start', callback_data='wallet')
+    keyboard.add(button)
+
+    for i in range(1, 180):
+        await asyncio.sleep(1)
+        if connector.connected:
+            if connector.account.address:
+                wallet_address = connector.account.address
+                wallet_address = Address(wallet_address).to_str(is_bounceable=False)
+                await message.answer(f'You are connected with address <code>{wallet_address}</code>',
+                                     reply_markup=keyboard)
+                logger.info(f'Connected with address: {wallet_address}')
+            return
+
+    await message.answer(f'Timeout error!', reply_markup=keyboard)
+
+
+async def disconnect_wallet(message: types.Message):
+    connector = get_connector(message.chat.id)
+    await connector.restore_connection()
+    await connector.disconnect()
+    await message.answer('You have been successfully disconnected!')
 
 
 if __name__ == '__main__':
