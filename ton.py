@@ -3,8 +3,8 @@ import requests
 import asyncio
 
 # Aiogram
-from aiogram import Bot
-from aiogram.types import ParseMode
+from aiogram import Bot  # type: ignore
+from aiogram.types import ParseMode  # type: ignore
 
 # We also need config and database here
 import config
@@ -61,7 +61,7 @@ async def start():
                     continue
 
                 uid = int(uid)
-                
+
                 if not db.check_user(uid):
                     continue
 
@@ -73,8 +73,8 @@ async def start():
 
                 # Send a message to user
                 await bot.send_message(uid, 'Deposit confirmed!\n'
-                                      f'*+{value / 1e9:.2f} TON*',
-                                      parse_mode=ParseMode.MARKDOWN)
+                                            f'*+{value / 1e9:.2f} TON*',
+                                       parse_mode=ParseMode.MARKDOWN)
 
             # After we processed new transaction, last_lt must be updated
             last_lt = lt

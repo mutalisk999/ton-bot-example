@@ -2,11 +2,10 @@
 import logging
 
 # Aiogram imports
-from aiogram import Bot, Dispatcher, types
-from aiogram.dispatcher.filters import Text
-from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, \
-    InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils import executor
+from aiogram import Bot, Dispatcher, types  # type: ignore
+from aiogram.dispatcher.filters import Text  # type: ignore
+from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton  # type: ignore
+from aiogram.utils import executor  # type: ignore
 
 # Local modules to work with Database and Ton network
 import config
