@@ -1,5 +1,6 @@
 # Logging module
 import asyncio
+import base64
 import logging
 import sys
 import time
@@ -199,9 +200,11 @@ async def connect_wallet(message: types.Message, wallet_name: str):
     keyboard.add(button)
 
     img = qrcode.make(generated_url)
-    img.save('qrcode')
+    stream = BytesIO()
+    img.save(stream)
+    encoded = base64.b64encode(stream.getvalue()).decode("ascii")
 
-    await message.answer_photo(photo=file, caption='Connect wallet within 3 minutes', reply_markup=keyboard)
+    await message.answer_photo(photo=encoded, caption='Connect wallet within 3 minutes', reply_markup=keyboard)
 
     keyboard = InlineKeyboardMarkup()
     button = InlineKeyboardButton(text='Start', callback_data='wallet')
