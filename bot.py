@@ -203,8 +203,7 @@ async def connect_wallet(message: types.Message, wallet_name: str):
     img = qrcode.make(generated_url)
     stream = BytesIO()
     img.save(stream)
-
-    file = InputFile(stream, filename='qrcode')
+    file = InputFile(stream)
     await message.answer_photo(photo=file, caption='Connect wallet within 3 minutes', reply_markup=keyboard)
 
     keyboard = InlineKeyboardMarkup()
