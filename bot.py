@@ -211,7 +211,7 @@ async def connect_wallet(message: types.Message, wallet_name: str):
     await message.answer('Connect wallet within 3 minutes', reply_markup=keyboard)
 
     keyboard = InlineKeyboardMarkup()
-    button = InlineKeyboardButton(text='Start', callback_data='wallet')
+    button = InlineKeyboardButton(text='Start', callback_data='connect:{}'.format(wallet_name))
     keyboard.add(button)
 
     for i in range(1, 180):
@@ -240,17 +240,7 @@ async def main_callback_handler(call: CallbackQuery):
     await call.answer()
     message = call.message
     data = call.data
-    if data == "help":
-        await help_handler(message)
-    elif data == "share":
-        await share_handler(message)
-    elif data == "balance":
-        await balance_handler(message)
-    elif data == "deposit":
-        await deposit_handler(message)
-    elif data == "start":
-        await start_handler(message)
-    elif data == "send_tr":
+    if data == "send_tr":
         await send_transaction(message)
     elif data == 'disconnect':
         await disconnect_wallet(message)
